@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chat Agent Interface</title>
+    <!-- <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}"> -->
+    <link rel="stylesheet" href="../static/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Chat Agent Dashboard</h1>
+
+        <form method="POST" action="/trigger" enctype="multipart/form-data">
+            <!-- Excel Upload -->
+            <label for="excel">Upload Excel Sheet:</label>
+            <input type="file" name="excel_file" id="excel" required>
+
+            <!-- Mode Selection -->
+            <label for="mode">Choose Message Mode:</label>
+            <select name="mode" id="mode" required>
+                <option value="">-- Select Mode --</option>
+                <option value="sms">SMS</option>
+                <option value="email">Email</option>
+                <option value="whatsapp">WhatsApp</option>
+                <option value="call">Call</option>
+            </select>
+
+            <!-- Use Custom or Generated Message -->
+            <label>Use your own message or generate?</label>
+            <div class="radio-group">
+                <label><input type="radio" name="use_custom" value="yes" checked> Use My Own</label>
+                <label><input type="radio" name="use_custom" value="no"> Generate for Me</label>
+            </div>
+
+            <!-- Message Input -->
+            <label for="user_message">Message Content (if using own):</label>
+            <textarea name="user_message" id="user_message" placeholder="Enter your message here..."></textarea>
+
+            <!-- Buttons -->
+            <div class="btn-group">
+                <button type="submit" class="submit-btn">Submit</button>
+                <button type="reset" class="clear-btn">Clear</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>
