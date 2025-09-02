@@ -57,7 +57,7 @@ def send_sms(content, phone_number):
         return False, str(e)
 
 
-def send_email(name, recipient_email, message_body, subject=None, attachments=None):
+def send_email(name, recipient_email, message_body):
     if not is_valid_email(recipient_email):
         return False, f"Invalid email address: {recipient_email}"
 
@@ -66,27 +66,10 @@ def send_email(name, recipient_email, message_body, subject=None, attachments=No
         return False, "Email credentials not configured"
 
     msg = EmailMessage()
-    msg['Subject'] = subject
+    msg['Subject'] = f'Hello {name}'
     msg['From'] = EMAIL_ADDRESS
     msg['To'] = recipient_email
     msg.set_content(message_body)
-
-    # Attach files if any
-    import mimetypes
-    if attachments:
-        for file_storage in attachments:
-            file_data = file_storage.read()
-            file_name = file_storage.filename
-            # Guess MIME type
-            mime_type, _ = mimetypes.guess_type(file_name)
-            if mime_type:
-                maintype, subtype = mime_type.split('/')
-            else:
-                maintype, subtype = 'application', 'octet-stream'
-
-            msg.add_attachment(file_data, maintype=maintype, subtype=subtype, filename=file_name)
-            file_storage.seek(0)  # Reset pointer if needed elsewhere
-
 
     try:
         with smtplib.SMTP('smtp.gmail.com', 587) as smtp:
@@ -163,28 +146,23 @@ def handle_call(content, phone_number):
     except Exception as e:
         logging.error("Exception in handle_call", exc_info=True)
         return False, str(e)
-def dispatch_message(mode, content, contact, name=None, subject=None, attachments=None):
+
+
+def dispatch_message(mode, content, contact, name=None):
     """
     Dispatch message by mode:
     - For email, name param is required for personalized subject.
-    - subject and attachments are used only for email.
     """
-    
     if mode == "sms":
         return send_sms(content, contact)
-        
     elif mode == "email":
         if not name:
             name = "User"  # fallback name if not provided
-        
-        # Pass subject and attachments to send_email
-        return send_email(name, contact, content, subject=subject, attachments=attachments)
-    
+            print("000000")
+        return send_email(name, contact, content)
     elif mode == "whatsapp":
         return send_whatsapp(content, contact)
-    
     elif mode == "call":
         return handle_call(content, contact)
-    
     else:
         return False, f"Unsupported communication mode: {mode}"

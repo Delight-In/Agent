@@ -3,24 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <title>Chat Agent Interface</title>
-    <!-- <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}"> -->
     <link rel="stylesheet" href="../static/styles.css">
+
 </head>
 <body>
     <div class="container">
         <h1>Chat Agent Dashboard</h1>
 
         <form method="POST" action="/trigger" enctype="multipart/form-data">
+
             <!-- Excel Upload -->
             <label for="excel">Upload Excel Sheet:</label>
-            <input type="file" name="excel_file" id="excel" required>
+            <input type="file" name="excel_file" id="excel" accept=".xls,.xlsx" required>
 
             <!-- Mode Selection -->
             <label for="mode">Choose Message Mode:</label>
             <select name="mode" id="mode" required>
-                <option value="">-- Select Mode --</option>
-                <option value="sms">SMS</option>
                 <option value="email">Email</option>
+                <option value="sms">SMS</option>
                 <option value="whatsapp">WhatsApp</option>
                 <option value="call">Call</option>
             </select>
@@ -28,20 +28,99 @@
             <!-- Use Custom or Generated Message -->
             <label>Use your own message or generate?</label>
             <div class="radio-group">
-                <label><input type="radio" name="use_custom" value="yes" checked> Use My Own</label>
-                <label><input type="radio" name="use_custom" value="no"> Generate for Me</label>
+                <label><input type="radio" name="use_custom" value="yes" checked onclick="toggleMessage()"> Use My Own</label>
+                <label><input type="radio" name="use_custom" value="no" onclick="toggleMessage()"> Generate for Me</label>
             </div>
 
-            <!-- Message Input -->
-            <label for="user_message">Message Content (if using own):</label>
-            <textarea name="user_message" id="user_message" placeholder="Enter your message here..."></textarea>
+            <!-- Unified Message Box Container -->
+            <div class="message-container">
 
-            <!-- Buttons -->
+                <!-- Email Subject (shown only if mode=email) -->
+                <div id="email-subject-group" style="display: none;">
+                    <label for="email_subject">Email Subject:</label>
+                    <input type="text" name="email_subject" id="email_subject" placeholder="Enter subject for email">
+                </div>
+
+                <!-- Message Textarea -->
+                <label for="user_message">Message Content:</label>
+                <textarea name="user_message" id="user_message" placeholder="Enter your message here..."></textarea>
+
+                <!-- File Attachments -->
+                <label for="attachments">Attach Files (PDF, CSV, DOCX):</label>
+                <input type="file" name="message_attachments" id="attachments" multiple accept=".pdf,.csv,.doc,.docx">
+
+            </div>
+
+            <!-- Action Buttons -->
             <div class="btn-group">
+                <button type="button" class="generate-btn" onclick="generateMessage()">Generate AI Message</button>
                 <button type="submit" class="submit-btn">Submit</button>
                 <button type="reset" class="clear-btn">Clear</button>
             </div>
         </form>
     </div>
+
+    <script>
+        function toggleMessage() {
+            const useCustom = document.querySelector('input[name="use_custom"]:checked').value;
+            const textarea = document.getElementById('user_message');
+            const generateBtn = document.querySelector('.generate-btn');
+
+            if (useCustom === 'no') {
+                textarea.placeholder = "Click 'Generate AI Message' to auto-fill...";
+                generateBtn.style.display = 'inline-block';
+            } else {
+                textarea.placeholder = "Enter your message here...";
+                generateBtn.style.display = 'none';
+                textarea.value = '';
+            }
+        }
+
+        function handleModeChange() {
+            const mode = document.getElementById('mode').value;
+            const subjectGroup = document.getElementById('email-subject-group');
+
+            if (mode === 'email') {
+                subjectGroup.style.display = 'block';
+            } else {
+                subjectGroup.style.display = 'none';
+                document.getElementById('email_subject').value = '';
+            }
+        }
+
+        document.getElementById('mode').addEventListener('change', handleModeChange);
+        window.onload = function () {
+            toggleMessage();
+            handleModeChange();
+        };
+
+        async function generateMessage() {
+            const mode = document.getElementById('mode').value || 'email';
+            const userMessage = document.getElementById('user_message').value;
+
+            try {
+                const response = await fetch('/generate-message', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mode: mode,
+                        user_message: userMessage
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.message) {
+                    document.getElementById('user_message').value = data.message;
+                } else {
+                    alert("Error generating message: " + (data.error || "Unknown error"));
+                }
+            } catch (error) {
+                alert("Failed to generate message: " + error.message);
+            }
+        }
+    </script>
 </body>
 </html>

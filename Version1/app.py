@@ -7,9 +7,6 @@ from utils import parse_excel
 from content import generate_content
 from main import dispatch_message
 
-from flask import Flask, request, jsonify
-from content import generate_content 
-
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(16)
 
@@ -20,19 +17,6 @@ app.config['UPLOAD_EXTENSIONS'] = ['.xlsx', '.xls']
 @app.route('/')
 def index():
     return render_template('index.html')
-
-@app.route('/generate-message', methods=['POST'])
-def generate_message():
-    data = request.json
-    mode = data.get('mode', 'email')
-    user_message = data.get('user_message', '')
-    subject = data.get('subject', '')
-
-    try:
-        message = generate_content(mode, user_message, subject=subject)
-        return jsonify({'message': message, 'subject': subject})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/trigger', methods=['POST'])
@@ -58,10 +42,6 @@ def trigger_action():
     mode = request.form.get('mode')
     use_custom = request.form.get('use_custom', 'yes')
     user_message = request.form.get('user_message', '').strip()
-    email_subject = request.form.get('email_subject', '').strip()
-
-    # Step 3.1: Get attachments
-    attachments = request.files.getlist('message_attachments')  # This is a list of FileStorage objects
 
     if not mode:
         flash("❌ Please select a communication mode.", 'error')
@@ -71,12 +51,11 @@ def trigger_action():
     failures = []
 
     # Step 4: Loop through all contacts
-
     for contact in contacts:
         if use_custom == 'yes' and user_message:
             content = user_message
         elif use_custom == 'no':
-            content = generate_content(mode, user_message, recipient_name=contact.get('name', 'User'))
+            content = generate_content(mode, recipient_name=contact.get('name', 'User'))
         else:
             failures.append((contact, "❌ Please enter a message or choose to auto-generate it."))
             continue
@@ -91,17 +70,9 @@ def trigger_action():
             failures.append((contact, f"❌ Contact info missing for mode '{mode}'."))
             continue
 
-        # Step 6: Send message
+        # Step 6: Send
         if mode == 'email':
-            # Pass subject and attachments to dispatch_message
-            success, dispatch_msg = dispatch_message(
-                mode,
-                content,
-                contact_value,
-                name=contact.get('name', 'User'),
-                subject=email_subject,
-                attachments=attachments
-            )
+            success, dispatch_msg = dispatch_message(mode, content, contact_value, name=contact.get('name', 'User'))
         else:
             success, dispatch_msg = dispatch_message(mode, content, contact_value)
 
@@ -122,7 +93,6 @@ def trigger_action():
         failures=failures,
         mode=mode
     )
-
 
 
 @app.route('/success')
