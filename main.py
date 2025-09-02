@@ -74,20 +74,25 @@ def send_email(name, recipient_email, message_body, subject=None, attachments=No
     # Attach files if any
     import mimetypes
     if attachments:
-        for file_storage in attachments:
-            file_data = file_storage.read()
-            file_name = file_storage.filename
-            # Guess MIME type
-            mime_type, _ = mimetypes.guess_type(file_name)
-            if mime_type:
-                maintype, subtype = mime_type.split('/')
-            else:
-                maintype, subtype = 'application', 'octet-stream'
+    for file_storage in attachments:
+        # Skip empty files (no filename or empty content)
+        if not file_storage.filename or file_storage.content_length == 0:
+            continue
 
-            msg.add_attachment(file_data, maintype=maintype, subtype=subtype, filename=file_name)
-            file_storage.seek(0)  # Reset pointer if needed elsewhere
+        file_data = file_storage.read()
+        file_name = file_storage.filename
+
+        # Guess MIME type
+        mime_type, _ = mimetypes.guess_type(file_name)
+        if mime_type:
+            maintype, subtype = mime_type.split('/')
         else:
-            pass
+            maintype, subtype = 'application', 'octet-stream'
+
+        msg.add_attachment(file_data, maintype=maintype, subtype=subtype, filename=file_name)
+
+        file_storage.seek(0)  # Reset pointer if needed elsewhere
+
 
 
     try:
