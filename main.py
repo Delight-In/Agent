@@ -86,6 +86,8 @@ def send_email(name, recipient_email, message_body, subject=None, attachments=No
 
             msg.add_attachment(file_data, maintype=maintype, subtype=subtype, filename=file_name)
             file_storage.seek(0)  # Reset pointer if needed elsewhere
+        else:
+            pass
 
 
     try:
